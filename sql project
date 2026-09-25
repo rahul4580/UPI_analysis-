@@ -1,0 +1,117 @@
+
+
+
+select * from upi_transactions
+
+
+-- What is the overall success rate of all UPI transactions?
+SELECT 
+    AVG(success_flag) * 100 AS success_rate
+FROM upi_transactions;
+
+
+-- Which UPI App has the highest and lowest success rate?
+select upi_app ,  AVG(success_flag) * 100 AS success_rate 
+from upi_transactions 
+group by upi_app
+order by success_rate desc 
+
+
+
+-- Which Network Type (4G, 5G, WiFi, 3G) has the highest failure rate?
+select network_type , sum(success_flag) from upi_transactions
+group by network_type
+
+
+-- Rank all UPI Apps by total successful transaction amount 
+select 
+    upi_app,
+    sum(successful_amount_inr) AS total_successful_amount
+from upi_transactions
+where success_flag = 1
+group BY upi_app
+order BY total_successful_amount DESC;
+
+
+-- Which UPI App has the highest average transaction amount (successful only)?
+select 
+     upi_app,
+	 avg(successful_amount_inr) as avgprice
+from upi_transactions
+where success_flag = 1
+group by upi_app
+order by avgprice desc;
+
+
+
+
+-- Find the market share (%) of each UPI App based on number of transactions.
+
+
+SELECT
+    upi_app,
+    COUNT(*) AS total_transactions,
+    ROUND(
+        COUNT(*) * 100.0 / (SELECT COUNT(*) FROM upi_transactions),
+        2
+    ) AS market_share
+FROM upi_transactions
+GROUP BY upi_app
+ORDER BY market_share DESC;
+
+
+-- Which App is most popular among users aged 18-24?
+SELECT 
+    upi_app,
+    COUNT(*) AS total_transactions
+FROM upi_transactions
+WHERE age BETWEEN 18 AND 24
+GROUP BY upi_app
+ORDER BY total_transactions DESC;
+
+-- Calculate the success rate (%) for each UPI app. (Success rate = Successful transactions / Total transactions × 100)
+SELECT
+    upi_app,
+    COUNT(*) AS total_transactions,
+    SUM(success_flag) AS successful_transactions,
+    ROUND(SUM(success_flag) * 100.0 / COUNT(*), 2) AS success_rate
+FROM upi_transactions
+GROUP BY upi_app
+ORDER BY success_rate DESC;
+
+
+
+-- Find the most common failure reason and how many times it occurred.
+SELECT
+    failure_reason,
+    COUNT(*) AS failure_count
+FROM upi_transactions
+WHERE success_flag = 0
+GROUP BY failure_reason
+ORDER BY failure_count DESC
+LIMIT 1;
+
+
+-- Find the top 5 Merchant Categories by total successful amount, 
+-- and also show what % each category contributes to the overall successful amount. 
+WITH category_totals AS (
+    SELECT
+        merchant_category,
+        SUM(successful_amount_inr) AS total_successful_amount
+    FROM upi_transactions
+    WHERE success_flag = 1
+    GROUP BY merchant_category
+)
+SELECT
+    merchant_category,
+    total_successful_amount,
+    ROUND(
+        total_successful_amount * 100.0 /
+        SUM(total_successful_amount) OVER (),
+        2
+    ) AS contribution_percentage
+FROM category_totals
+ORDER BY total_successful_amount DESC
+LIMIT 5;
+
+
