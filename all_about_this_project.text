@@ -1,0 +1,35 @@
+UPI Transaction Analysis — Why I Built This
+
+I wanted to actually understand how UPI transactions behave across India — which apps dominate, which states use what, and where the money's moving on mobile vs web — instead of just reading about it. So I built a full pipeline: raw data → cleaned → stored in a database → analyzed → visualized.
+
+Step 1: Excel — getting my hands dirty first
+Before touching any code, I opened the raw data in Excel just to look at it. Spotted the messy stuff — blank cells, weird formatting, duplicate transaction IDs, inconsistent state names (like "MH" vs "Maharashtra"). Used filters, pivot tables, and conditional formatting to get a feel for the shape of the data before deciding how to clean it programmatically. Excel is great for this — it's fast for eyeballing patterns before you commit to code.
+
+Step 2: Python + NumPy — the real cleaning and number-crunching
+This is where the heavy lifting happened. I used Python (pandas + NumPy) to:
+
+Handle missing values and fix data types (dates, amounts, IDs)
+Standardize categorical fields (state names, app names, device types)
+Do the actual math — aggregations, grouping by state/app/month, computing totals and averages with NumPy for speed on the numeric columns
+Catch outliers/duplicates that Excel couldn't easily flag at scale
+
+Basically, Excel told me what was wrong, Python fixed it at scale.
+
+Step 3: PostgreSQL — giving the data a proper home
+Once it was clean, I didn't want to keep juggling CSVs. I loaded everything into PostgreSQL so I could:
+
+Structure it properly with tables (transactions, states, apps, devices)
+Run SQL queries to slice the data any way I needed (by state, by app, by device, by month) — way more reliable than doing it all in pandas every time
+Have one single source of truth that any tool (like Tableau) could just plug into
+
+Step 4: Tableau — making it something people can actually see
+Numbers in a table don't tell a story — a dashboard does. I connected Tableau to the PostgreSQL database and built an interactive dashboard with:
+
+A monthly transaction trend view to catch seasonality/spikes
+A transaction-by-app-per-state matrix (Amazon Pay, BHIM, CRED, Google Pay, Paytm, PhonePe, WhatsApp) so you can instantly see which app wins in which state — PhonePe and Google Pay clearly dominate almost everywhere
+A state filter so anyone can click a state and the whole dashboard updates
+A device-type breakdown (Android/iOS/Web) to see how transaction amounts differ by platform
+A transaction ID search + amount range slider for quick lookups
+
+Why this stack, and not just one tool?
+Because that's how real data work actually goes — no single tool does everything well. Excel = quick exploration. Python/NumPy = serious cleaning and computation at scale. PostgreSQL = structured storage and querying. Tableau = the story you show people. Each step fed the next.
